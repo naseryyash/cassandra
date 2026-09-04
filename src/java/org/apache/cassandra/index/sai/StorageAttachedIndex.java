@@ -171,6 +171,9 @@ public class StorageAttachedIndex implements Index
                                                                         CQL3Type.Native.VARINT, CQL3Type.Native.DECIMAL, CQL3Type.Native.BOOLEAN,
                                                                         CQL3Type.Native.BLOB);
 
+    // Upper bound on the shards option to prevent runaway per-shard allocations at first-write.
+    public static final int MAX_SHARD_COUNT = 256;
+
     private static final Set<Class<? extends IPartitioner>> ILLEGAL_PARTITIONERS =
             ImmutableSet.of(OrderPreservingPartitioner.class, LocalPartitioner.class, ByteOrderedPartitioner.class, RandomPartitioner.class);
 
@@ -294,6 +297,8 @@ public class StorageAttachedIndex implements Index
                 int shardCount = Integer.parseInt(shardsOption);
                 if (shardCount <= 0)
                     throw new InvalidRequestException("Shard count for a storage-attached index must be a positive integer, was " + shardCount);
+                if (shardCount > MAX_SHARD_COUNT)
+                    throw new InvalidRequestException("Shard count for a storage-attached index must not exceed " + MAX_SHARD_COUNT + ", was " + shardCount);
             }
             catch (NumberFormatException e)
             {
