@@ -376,7 +376,11 @@ def consoleNoiseFilters() {
 
 // append a sed filter that drops lines matching consoleNoiseFilters() from a step's output
 def filterConsoleOutput(String script) {
-  return "${script} | sed -e " + consoleNoiseFilters().collect { "/${it}/d" }.join(" -e ")
+  def filters = consoleNoiseFilters()
+  if (filters.isEmpty()) {
+    return script // a bare `sed` with no expression exits non-zero, and pipefail would fail the step
+  }
+  return "${script} | sed " + filters.collect { "-e '/${it}/d'" }.join(" ")
 }
 
 /**
